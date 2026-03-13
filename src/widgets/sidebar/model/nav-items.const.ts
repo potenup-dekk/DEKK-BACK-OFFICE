@@ -19,6 +19,12 @@ const navItems: SidebarNavItem[] = [
     label: "회원 관리",
     icon: "members",
   },
+  {
+    id: "categories",
+    href: "/categories",
+    label: "카테고리 관리",
+    icon: "categories",
+  },
 ];
 
 export default navItems;

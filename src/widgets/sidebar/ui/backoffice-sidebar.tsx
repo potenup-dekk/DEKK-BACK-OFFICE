@@ -3,6 +3,7 @@
 import {
   ClipboardCheck,
   CreditCard,
+  FolderTree,
   PanelLeftClose,
   PanelLeftOpen,
   Users,
@@ -20,6 +21,7 @@ const iconByType = {
   inspection: ClipboardCheck,
   cards: CreditCard,
   members: Users,
+  categories: FolderTree,
 } as const;
 
 const BackofficeSidebar = ({ className }: BackofficeSidebarProps) => {
