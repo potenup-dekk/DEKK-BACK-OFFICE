@@ -3,7 +3,9 @@ import type CategoryTreeNode from "@/shared/api/services/categories/category-tre
 import CategorySelector from "@/widgets/category-selector";
 import type { CategoryGroup } from "@/widgets/category-selector/model/category.type";
 
-const mapToCategoryGroups = (categoryTree: CategoryTreeNode[]): CategoryGroup[] => {
+const mapToCategoryGroups = (
+  categoryTree: CategoryTreeNode[],
+): CategoryGroup[] => {
   return categoryTree.map((primaryCategory) => {
     return {
       categoryId: primaryCategory.categoryId,
