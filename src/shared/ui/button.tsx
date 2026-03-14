@@ -11,7 +11,7 @@ const buttonStyle = cva(
         primary:
           "border-primary bg-primary text-primary-foreground hover:bg-[#3a3a3a]",
         subtle: "border-border bg-card text-foreground hover:bg-muted",
-        danger: "border-red-600 bg-red-600 text-white hover:bg-red-700",
+        danger: "border-red-600 bg-red-700 text-white hover:bg-red-700",
       },
       size: {
         sm: "h-8 px-3",
