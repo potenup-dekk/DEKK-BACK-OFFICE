@@ -121,3 +121,8 @@ const assertApiSuccess = <T>(response: ApiResponse<T>): T => {
   }
 };
 ```
+
+## Swagger Codegen Link Rule
+
+- If API addition request is given as endpoint-only input, follow the dedicated Swagger/OpenAPI flow in `swagger-openapi-codegen.instructions.md` first.
+- After endpoint analysis/generation from OpenAPI, enforce all rules in this document for final module structure and runtime boundaries.
