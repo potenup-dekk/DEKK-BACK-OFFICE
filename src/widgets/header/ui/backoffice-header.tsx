@@ -1,5 +1,6 @@
 import { Bell, Search } from "lucide-react";
 
+import SignOutButton from "@/features/admin-auth/sign-out";
 import Avatar from "@/shared/ui/avatar";
 import Input from "@/shared/ui/input";
 import type BackofficeHeaderProps from "@/widgets/header/model/props.type";
@@ -26,6 +27,7 @@ const BackofficeHeader = ({ className }: BackofficeHeaderProps) => {
           <Bell size={16} />
         </button>
         <Avatar label="관" />
+        <SignOutButton />
       </div>
     </header>
   );

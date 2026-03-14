@@ -25,8 +25,12 @@ const CategorySelector = ({
   const [isPending, startTransition] = useTransition();
   const [groups, setGroups] = useState<CategoryGroup[]>(initialGroups);
   const [currentStep, setCurrentStep] = useState<CategoryStep>("primary");
-  const [selectedPrimaryId, setSelectedPrimaryId] = useState<number | null>(null);
-  const [selectedSecondaryIds, setSelectedSecondaryIds] = useState<number[]>([]);
+  const [selectedPrimaryId, setSelectedPrimaryId] = useState<number | null>(
+    null,
+  );
+  const [selectedSecondaryIds, setSelectedSecondaryIds] = useState<number[]>(
+    [],
+  );
   const [draftCategory, setDraftCategory] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -69,16 +73,12 @@ const CategorySelector = ({
 
   const handleSecondarySelect = (secondaryCategoryId: number) => {
     setSelectedSecondaryIds((prev) => {
-      if (prev.includes(secondaryCategoryId)) {
-        return prev.filter((item) => item !== secondaryCategoryId);
+      if (prev[0] === secondaryCategoryId) {
+        return [];
       }
 
-      return [...prev, secondaryCategoryId];
+      return [secondaryCategoryId];
     });
-  };
-
-  const createLocalCategoryId = () => {
-    return Date.now() + Math.floor(Math.random() * 1000);
   };
 
   const executeCategoryAdd = async () => {
@@ -109,8 +109,14 @@ const CategorySelector = ({
         return;
       }
 
-      const createdPrimaryCategoryId =
-        result.createdCategoryId ?? createLocalCategoryId();
+      if (typeof result.createdCategoryId !== "number") {
+        setErrorMessage(
+          "카테고리 ID를 확인할 수 없어 추가를 완료하지 못했습니다.",
+        );
+        return;
+      }
+
+      const createdPrimaryCategoryId = result.createdCategoryId;
 
       setGroups((prev) => [
         ...prev,
@@ -152,8 +158,15 @@ const CategorySelector = ({
       return;
     }
 
+    if (typeof result.createdCategoryId !== "number") {
+      setErrorMessage(
+        "카테고리 ID를 확인할 수 없어 추가를 완료하지 못했습니다.",
+      );
+      return;
+    }
+
     const createdSecondaryCategory: SecondaryCategory = {
-      categoryId: result.createdCategoryId ?? createLocalCategoryId(),
+      categoryId: result.createdCategoryId,
       name: nextCategory,
     };
 
@@ -169,7 +182,7 @@ const CategorySelector = ({
         };
       });
     });
-    setSelectedSecondaryIds((prev) => [...prev, createdSecondaryCategory.categoryId]);
+    setSelectedSecondaryIds([createdSecondaryCategory.categoryId]);
     setDraftCategory("");
   };
 
@@ -185,6 +198,9 @@ const CategorySelector = ({
       const result = await deleteCategoryAction({
         level: "primary",
         categoryId: activePrimaryId,
+        childCategoryIds:
+          selectedPrimaryCategory?.children.map((child) => child.categoryId) ??
+          [],
       });
 
       if (!result.isSuccess) {
@@ -306,7 +322,7 @@ const CategorySelector = ({
         </Button>
       </div>
 
-      {errorMessage ?? initialFetchErrorMessage ? (
+      {(errorMessage ?? initialFetchErrorMessage) ? (
         <p className={slots.helperText()}>
           {errorMessage ?? initialFetchErrorMessage}
         </p>

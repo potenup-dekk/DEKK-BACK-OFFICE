@@ -1,6 +1,11 @@
 import type ApiError from "@/shared/api/fetcher/api-error.type";
 import type ApiResponse from "@/shared/api/fetcher/api-response.type";
 
+interface AuthApiRequestResult<T> {
+  response: ApiResponse<T>;
+  setCookieHeaders: string[];
+}
+
 const API_BASE_URL =
   process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
@@ -39,10 +44,56 @@ const getServerCookieHeader = async () => {
   return (await cookies()).toString();
 };
 
-const requestApi = async <T>(
+const splitSetCookieHeader = (rawSetCookie: string) => {
+  const chunks: string[] = [];
+  let current = "";
+  let inExpiresAttribute = false;
+
+  for (let index = 0; index < rawSetCookie.length; index += 1) {
+    const char = rawSetCookie[index];
+
+    if (char === "," && !inExpiresAttribute) {
+      if (current.trim()) {
+        chunks.push(current.trim());
+      }
+
+      current = "";
+      continue;
+    }
+
+    current += char;
+
+    const lowerCurrent = current.toLowerCase();
+
+    if (lowerCurrent.endsWith("expires=")) {
+      inExpiresAttribute = true;
+    }
+
+    if (inExpiresAttribute && char === ";") {
+      inExpiresAttribute = false;
+    }
+  }
+
+  if (current.trim()) {
+    chunks.push(current.trim());
+  }
+
+  return chunks;
+};
+
+const readSetCookieHeaders = (response: Response) => {
+  if (typeof response.headers.getSetCookie === "function") {
+    return response.headers.getSetCookie();
+  }
+
+  const rawSetCookie = response.headers.get("set-cookie");
+  return rawSetCookie ? splitSetCookieHeader(rawSetCookie) : [];
+};
+
+const requestAuthApi = async <T>(
   endpoint: string,
   init?: RequestInit,
-): Promise<ApiResponse<T>> => {
+): Promise<AuthApiRequestResult<T>> => {
   const serverCookieHeader = await getServerCookieHeader();
 
   const response = await fetch(buildApiUrl(endpoint), {
@@ -68,7 +119,10 @@ const requestApi = async <T>(
     throw createInvalidResponseError();
   }
 
-  return body;
+  return {
+    response: body,
+    setCookieHeaders: readSetCookieHeaders(response),
+  };
 };
 
-export default requestApi;
+export default requestAuthApi;
