@@ -1,136 +1,250 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 
+import createCategoryAction from "@/shared/api/actions/categories/create-category.action";
+import deleteCategoryAction from "@/shared/api/actions/categories/delete-category.action";
 import cn from "@/shared/lib/utils";
 import Button from "@/shared/ui/button";
 import Input from "@/shared/ui/input";
-import categoryGroups from "@/widgets/category-selector/model/category-options.const";
 import type CategorySelectorProps from "@/widgets/category-selector/model/props.type";
 import type {
   CategoryGroup,
+  SecondaryCategory,
   CategoryStep,
 } from "@/widgets/category-selector/model/category.type";
 import CategoryStepSwitcher from "@/widgets/category-selector/ui/category-step-switcher";
 import categorySelectorStyle from "../style";
 
-const CategorySelector = ({ className }: CategorySelectorProps) => {
-  const [groups, setGroups] = useState<CategoryGroup[]>(categoryGroups);
+const CategorySelector = ({
+  className,
+  initialGroups,
+  initialFetchErrorMessage,
+}: CategorySelectorProps) => {
+  const [isPending, startTransition] = useTransition();
+  const [groups, setGroups] = useState<CategoryGroup[]>(initialGroups);
   const [currentStep, setCurrentStep] = useState<CategoryStep>("primary");
-  const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
-  const [selectedSecondary, setSelectedSecondary] = useState<string[]>([]);
+  const [selectedPrimaryId, setSelectedPrimaryId] = useState<number | null>(null);
+  const [selectedSecondaryIds, setSelectedSecondaryIds] = useState<number[]>([]);
   const [draftCategory, setDraftCategory] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const slots = useMemo(() => categorySelectorStyle(), []);
 
-  const secondaryOptions = useMemo(() => {
-    if (!selectedPrimary) {
-      return [];
+  const activePrimaryId = useMemo(() => {
+    if (selectedPrimaryId === null) {
+      return null;
     }
 
-    return (
-      groups.find((group) => group.primary === selectedPrimary)?.secondary ?? []
+    const hasSelectedPrimary = groups.some(
+      (group) => group.categoryId === selectedPrimaryId,
     );
-  }, [groups, selectedPrimary]);
 
-  const handlePrimarySelect = (primaryCategory: string) => {
-    setSelectedPrimary(primaryCategory);
-    setSelectedSecondary([]);
+    return hasSelectedPrimary ? selectedPrimaryId : null;
+  }, [groups, selectedPrimaryId]);
+
+  const selectedPrimaryCategory = useMemo(() => {
+    if (activePrimaryId === null) {
+      return null;
+    }
+
+    return groups.find((group) => group.categoryId === activePrimaryId) ?? null;
+  }, [activePrimaryId, groups]);
+
+  const secondaryOptions = useMemo(() => {
+    return selectedPrimaryCategory?.children ?? [];
+  }, [selectedPrimaryCategory]);
+
+  const selectedSecondaryNames = useMemo(() => {
+    return secondaryOptions
+      .filter((category) => selectedSecondaryIds.includes(category.categoryId))
+      .map((category) => category.name);
+  }, [secondaryOptions, selectedSecondaryIds]);
+
+  const handlePrimarySelect = (primaryCategoryId: number) => {
+    setSelectedPrimaryId(primaryCategoryId);
+    setSelectedSecondaryIds([]);
   };
 
-  const handleSecondarySelect = (secondaryCategory: string) => {
-    setSelectedSecondary((prev) => {
-      if (prev.includes(secondaryCategory)) {
-        return prev.filter((item) => item !== secondaryCategory);
+  const handleSecondarySelect = (secondaryCategoryId: number) => {
+    setSelectedSecondaryIds((prev) => {
+      if (prev.includes(secondaryCategoryId)) {
+        return prev.filter((item) => item !== secondaryCategoryId);
       }
 
-      return [...prev, secondaryCategory];
+      return [...prev, secondaryCategoryId];
     });
   };
 
-  const handleCategoryAdd = () => {
+  const createLocalCategoryId = () => {
+    return Date.now() + Math.floor(Math.random() * 1000);
+  };
+
+  const executeCategoryAdd = async () => {
     const nextCategory = draftCategory.trim();
 
     if (!nextCategory) {
+      setErrorMessage("카테고리 이름을 입력해주세요.");
       return;
     }
 
+    setErrorMessage(null);
+
     if (currentStep === "primary") {
-      const hasPrimary = groups.some((group) => group.primary === nextCategory);
+      const hasPrimary = groups.some((group) => group.name === nextCategory);
 
       if (hasPrimary) {
+        setErrorMessage("이미 존재하는 1차 카테고리입니다.");
         return;
       }
 
-      setGroups((prev) => [...prev, { primary: nextCategory, secondary: [] }]);
-      setSelectedPrimary(nextCategory);
-      setSelectedSecondary([]);
+      const result = await createCategoryAction({
+        level: "primary",
+        name: nextCategory,
+      });
+
+      if (!result.isSuccess) {
+        setErrorMessage(result.message);
+        return;
+      }
+
+      const createdPrimaryCategoryId =
+        result.createdCategoryId ?? createLocalCategoryId();
+
+      setGroups((prev) => [
+        ...prev,
+        {
+          categoryId: createdPrimaryCategoryId,
+          name: nextCategory,
+          children: [],
+        },
+      ]);
+      setSelectedPrimaryId(createdPrimaryCategoryId);
+      setSelectedSecondaryIds([]);
       setCurrentStep("secondary");
       setDraftCategory("");
       return;
     }
 
-    if (!selectedPrimary) {
+    if (activePrimaryId === null) {
+      setErrorMessage("2차 카테고리를 추가하려면 1차 카테고리를 선택해주세요.");
       return;
     }
 
-    const hasSecondary = secondaryOptions.includes(nextCategory);
+    const hasSecondary = secondaryOptions.some(
+      (category) => category.name === nextCategory,
+    );
 
     if (hasSecondary) {
+      setErrorMessage("이미 존재하는 2차 카테고리입니다.");
       return;
     }
 
-    setGroups((prev) =>
-      prev.map((group) => {
-        if (group.primary !== selectedPrimary) {
+    const result = await createCategoryAction({
+      level: "secondary",
+      name: nextCategory,
+      parentCategoryId: activePrimaryId,
+    });
+
+    if (!result.isSuccess) {
+      setErrorMessage(result.message);
+      return;
+    }
+
+    const createdSecondaryCategory: SecondaryCategory = {
+      categoryId: result.createdCategoryId ?? createLocalCategoryId(),
+      name: nextCategory,
+    };
+
+    setGroups((prev) => {
+      return prev.map((group) => {
+        if (group.categoryId !== activePrimaryId) {
           return group;
         }
 
         return {
           ...group,
-          secondary: [...group.secondary, nextCategory],
+          children: [...group.children, createdSecondaryCategory],
         };
-      }),
-    );
-    setSelectedSecondary((prev) => [...prev, nextCategory]);
+      });
+    });
+    setSelectedSecondaryIds((prev) => [...prev, createdSecondaryCategory.categoryId]);
     setDraftCategory("");
   };
 
-  const handleCategoryDelete = () => {
+  const executeCategoryDelete = async () => {
+    setErrorMessage(null);
+
     if (currentStep === "primary") {
-      if (!selectedPrimary) {
+      if (activePrimaryId === null) {
+        setErrorMessage("삭제할 1차 카테고리를 선택해주세요.");
         return;
       }
 
-      setGroups((prev) =>
-        prev.filter((group) => group.primary !== selectedPrimary),
-      );
-      setSelectedPrimary(null);
-      setSelectedSecondary([]);
+      const result = await deleteCategoryAction({
+        level: "primary",
+        categoryId: activePrimaryId,
+      });
+
+      if (!result.isSuccess) {
+        setErrorMessage(result.message);
+        return;
+      }
+
+      setGroups((prev) => {
+        return prev.filter((group) => group.categoryId !== activePrimaryId);
+      });
+      setSelectedPrimaryId(null);
+      setSelectedSecondaryIds([]);
       setCurrentStep("primary");
       return;
     }
 
-    if (!selectedPrimary || selectedSecondary.length === 0) {
+    if (selectedPrimaryId === null || selectedSecondaryIds.length === 0) {
+      setErrorMessage("삭제할 2차 카테고리를 선택해주세요.");
       return;
     }
 
-    setGroups((prev) =>
-      prev.map((group) => {
-        if (group.primary !== selectedPrimary) {
+    const result = await deleteCategoryAction({
+      level: "secondary",
+      categoryIds: selectedSecondaryIds,
+    });
+
+    if (!result.isSuccess) {
+      setErrorMessage(result.message);
+      return;
+    }
+
+    const selectedIds = selectedSecondaryIds;
+
+    setGroups((prev) => {
+      return prev.map((group) => {
+        if (group.categoryId !== selectedPrimaryId) {
           return group;
         }
 
         return {
           ...group,
-          secondary: group.secondary.filter(
-            (item) => !selectedSecondary.includes(item),
+          children: group.children.filter(
+            (child) => !selectedIds.includes(child.categoryId),
           ),
         };
-      }),
-    );
-    setSelectedSecondary([]);
+      });
+    });
+    setSelectedSecondaryIds([]);
+  };
+
+  const handleCategoryAdd = () => {
+    startTransition(() => {
+      void executeCategoryAdd();
+    });
+  };
+
+  const handleCategoryDelete = () => {
+    startTransition(() => {
+      void executeCategoryDelete();
+    });
   };
 
   return (
@@ -138,8 +252,8 @@ const CategorySelector = ({ className }: CategorySelectorProps) => {
       <CategoryStepSwitcher
         currentStep={currentStep}
         onStepChange={setCurrentStep}
-        selectedPrimary={selectedPrimary}
-        selectedSecondary={selectedSecondary}
+        selectedPrimary={selectedPrimaryCategory?.name ?? null}
+        selectedSecondary={selectedSecondaryNames}
       />
 
       <div aria-hidden className={slots.stepDivider()} />
@@ -164,7 +278,10 @@ const CategorySelector = ({ className }: CategorySelectorProps) => {
         />
         <Button
           aria-label="카테고리 추가"
-          disabled={currentStep === "secondary" && !selectedPrimary}
+          disabled={
+            isPending ||
+            (currentStep === "secondary" && activePrimaryId === null)
+          }
           onClick={handleCategoryAdd}
           size="icon-circle"
           type="button"
@@ -175,9 +292,10 @@ const CategorySelector = ({ className }: CategorySelectorProps) => {
         <Button
           aria-label="카테고리 삭제"
           disabled={
-            currentStep === "primary"
-              ? !selectedPrimary
-              : selectedSecondary.length === 0
+            isPending ||
+            (currentStep === "primary"
+              ? activePrimaryId === null
+              : selectedSecondaryIds.length === 0)
           }
           onClick={handleCategoryDelete}
           size="icon-circle"
@@ -188,6 +306,12 @@ const CategorySelector = ({ className }: CategorySelectorProps) => {
         </Button>
       </div>
 
+      {errorMessage ?? initialFetchErrorMessage ? (
+        <p className={slots.helperText()}>
+          {errorMessage ?? initialFetchErrorMessage}
+        </p>
+      ) : null}
+
       {currentStep === "primary" ? (
         <>
           <div className={slots.badgeWrap()}>
@@ -195,15 +319,15 @@ const CategorySelector = ({ className }: CategorySelectorProps) => {
               <button
                 className={cn(
                   slots.badgeButton(),
-                  selectedPrimary === group.primary
+                  activePrimaryId === group.categoryId
                     ? slots.badgeButtonSelected()
                     : undefined,
                 )}
-                key={group.primary}
-                onClick={() => handlePrimarySelect(group.primary)}
+                key={group.categoryId}
+                onClick={() => handlePrimarySelect(group.categoryId)}
                 type="button"
               >
-                {group.primary}
+                {group.name}
               </button>
             ))}
           </div>
@@ -215,15 +339,15 @@ const CategorySelector = ({ className }: CategorySelectorProps) => {
               <button
                 className={cn(
                   slots.badgeButton(),
-                  selectedSecondary.includes(item)
+                  selectedSecondaryIds.includes(item.categoryId)
                     ? slots.badgeButtonSelected()
                     : undefined,
                 )}
-                key={item}
-                onClick={() => handleSecondarySelect(item)}
+                key={item.categoryId}
+                onClick={() => handleSecondarySelect(item.categoryId)}
                 type="button"
               >
-                {item}
+                {item.name}
               </button>
             ))}
           </div>
