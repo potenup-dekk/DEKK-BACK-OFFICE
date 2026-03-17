@@ -178,13 +178,7 @@ const AdminCardList = ({
     } finally {
       setIsFetchingNextPage(false);
     }
-  }, [
-    baseFilters,
-    currentPage,
-    hasNext,
-    isFetchingNextPage,
-    router,
-  ]);
+  }, [baseFilters, currentPage, hasNext, isFetchingNextPage, router]);
 
   useEffect(() => {
     const target = sentinelRef.current;
