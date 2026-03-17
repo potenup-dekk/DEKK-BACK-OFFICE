@@ -15,6 +15,8 @@ import cn from "@/shared/lib/utils";
 import navItems from "@/widgets/sidebar/model/nav-items.const";
 import type BackofficeSidebarProps from "@/widgets/sidebar/model/props.type";
 import backofficeSidebarStyle from "@/widgets/sidebar/style";
+import Image from "next/image";
+import Logo from "../../../../public/dekk-white.svg";
 
 const iconByType = {
   cards: CreditCard,
@@ -34,10 +36,7 @@ const BackofficeSidebar = ({ className }: BackofficeSidebarProps) => {
   return (
     <aside className={cn(slots.root(), className)}>
       <div className={slots.brandArea()}>
-        <span className={slots.brandDot()} />
-        {!isCollapsed ? (
-          <p className={slots.brandText()}>DEKK Backoffice</p>
-        ) : null}
+        {!isCollapsed ? <Image src={Logo} alt="logo" width={110} /> : null}
         <button
           aria-label="toggle sidebar"
           className={slots.collapseButton()}

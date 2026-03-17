@@ -4,8 +4,6 @@ const backofficeSidebarStyle = tv({
   slots: {
     root: "flex h-screen flex-col overflow-y-auto border-r border-[#5a5a5a] bg-primary text-primary-foreground transition-all duration-200",
     brandArea: "flex h-16 items-center gap-2 border-b border-[#5a5a5a] px-4",
-    brandDot: "size-2 rounded-full bg-[#f2f2f2]",
-    brandText: "text-sm font-semibold tracking-tight",
     collapseButton:
       "ml-auto inline-flex size-7 items-center justify-center rounded-sm bg-[#5a5a5a] text-primary-foreground hover:bg-[#676767]",
     nav: "flex flex-1 flex-col gap-2 p-3",
