@@ -1,8 +1,8 @@
 "use client";
 
 import {
-  ClipboardCheck,
   CreditCard,
+  FolderTree,
   PanelLeftClose,
   PanelLeftOpen,
   Users,
@@ -17,9 +17,9 @@ import type BackofficeSidebarProps from "@/widgets/sidebar/model/props.type";
 import backofficeSidebarStyle from "@/widgets/sidebar/style";
 
 const iconByType = {
-  inspection: ClipboardCheck,
   cards: CreditCard,
   members: Users,
+  categories: FolderTree,
 } as const;
 
 const BackofficeSidebar = ({ className }: BackofficeSidebarProps) => {

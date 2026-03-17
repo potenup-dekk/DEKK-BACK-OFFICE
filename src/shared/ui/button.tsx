@@ -8,12 +8,15 @@ const buttonStyle = cva(
   {
     variants: {
       variant: {
-        primary: "border-primary bg-primary text-primary-foreground hover:bg-[#3a3a3a]",
+        primary:
+          "border-primary bg-primary text-primary-foreground hover:bg-[#3a3a3a]",
         subtle: "border-border bg-card text-foreground hover:bg-muted",
+        danger: "border-red-600 bg-red-700 text-white hover:bg-red-700",
       },
       size: {
         sm: "h-8 px-3",
         md: "h-9 px-4",
+        "icon-circle": "h-9 rounded-full px-6",
       },
     },
     defaultVariants: {
@@ -24,12 +27,16 @@ const buttonStyle = cva(
 );
 
 interface ButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement>,
+  extends
+    ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonStyle> {}
 
 const Button = ({ className, variant, size, ...props }: ButtonProps) => {
   return (
-    <button className={cn(buttonStyle({ variant, size }), className)} {...props} />
+    <button
+      className={cn(buttonStyle({ variant, size }), className)}
+      {...props}
+    />
   );
 };
 
