@@ -19,6 +19,10 @@
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
+  --color-primary: #333333;
+  --color-white: #f2f2f2;
+  --color-error: #e23737;
+  --color-gray: #bfbfbf;
 }
 
 :root {

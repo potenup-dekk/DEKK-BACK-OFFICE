@@ -17,11 +17,11 @@ const WebLayout = async ({ children }: Readonly<WebLayoutProps>) => {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       <BackofficeSidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <BackofficeHeader />
-        <main className="flex-1 p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>
   );
