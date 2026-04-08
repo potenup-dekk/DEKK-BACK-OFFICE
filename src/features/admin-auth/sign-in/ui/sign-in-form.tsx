@@ -9,6 +9,8 @@ import Button from "@/shared/ui/button";
 import Input from "@/shared/ui/input";
 import type SignInFormProps from "@/features/admin-auth/sign-in/model/props.type";
 import signInFormStyle from "@/features/admin-auth/sign-in/style";
+import Image from "next/image";
+import Logo from "../../../../../public/logo.png";
 
 const SignInForm = ({ className }: SignInFormProps) => {
   const [isPending, startTransition] = useTransition();
@@ -39,7 +41,7 @@ const SignInForm = ({ className }: SignInFormProps) => {
 
   return (
     <section className={[slots.root(), className].filter(Boolean).join(" ")}>
-      <h1 className={slots.title()}>관리자 로그인</h1>
+      <Image src={Logo} width={130} alt="" />
       <form className={slots.form()} onSubmit={handleSubmit}>
         <Input
           autoComplete="email"
