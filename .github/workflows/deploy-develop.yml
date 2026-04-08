@@ -34,7 +34,7 @@ jobs:
 
       # 4. Docker 이미지 빌드 (환경변수가 포함된 상태로 빌드됨)
       - name: Build Docker Image
-        run: docker build -t dekk-fe-develop .
+        run: docker build -t dekk-back-office-develop .
 
       # 5. 기존 컨테이너 중지 및 새 컨테이너 실행
       - name: Deploy with Docker
