@@ -44,6 +44,6 @@ jobs:
 
           docker run -d \
             --name dekk-back-office \
-            -p 3000:3000 \
+            -p 6001:3000 \
             --restart unless-stopped \
             dekk-back-office-develop
