@@ -1,0 +1,49 @@
+name: DEKK FE Deploy (develop)
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 1. 현재 브랜치가 develop일 때 환경변수 세팅
+      - name: Set env for develop
+        if: github.ref == 'refs/heads/develop'
+        run: |
+          echo "BASE_API_URL=${{ secrets.DEV_API_BASE_URL }}" >> $GITHUB_ENV
+
+      # 2. 현재 브랜치가 main일 때 환경변수 세팅
+      - name: Set env for main
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "BASE_API_URL=${{ secrets.PROD_API_BASE_URL }}" >> $GITHUB_ENV
+
+      # 3. 빌드 전 .env 파일 생성 단계 추가
+      - name: Create .env file
+        run: |
+          touch .env
+          echo "NEXT_PUBLIC_API_BASE_URL=${{ env.BASE_API_URL }}" >> .env
+          echo "NEXT_PUBLIC_BUCKET_URL=${{ secrets.NEXT_PUBLIC_BUCKET_URL }}" >> .env
+
+      # 4. Docker 이미지 빌드 (환경변수가 포함된 상태로 빌드됨)
+      - name: Build Docker Image
+        run: docker build -t dekk-fe-develop .
+
+      # 5. 기존 컨테이너 중지 및 새 컨테이너 실행
+      - name: Deploy with Docker
+        run: |
+          docker stop dekk-back-office || true
+          docker rm dekk-back-office || true
+
+          docker run -d \
+            --name dekk-back-office \
+            -p 3000:3000 \
+            --restart unless-stopped \
+            dekk-back-office-develop
