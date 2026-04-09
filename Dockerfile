@@ -26,4 +26,4 @@ COPY --from=builder /app/public ./public
 
 EXPOSE 3000
 
-CMD ["npm", "run", "start", "--", "-H", "0.0.0.0", "-p", "6001:3000"]
+CMD ["npm", "run", "start", "--", "-H", "0.0.0.0", "-p", "3000"]
