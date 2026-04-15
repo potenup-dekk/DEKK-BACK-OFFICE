@@ -226,6 +226,7 @@ const AdminCardReview = ({
                 src={imageUrl}
                 width={320}
                 height={480}
+                unoptimized
               />
             </div>
           </article>
@@ -243,7 +244,8 @@ const AdminCardReview = ({
                           key={product.productId}
                           name={product.name}
                           productImageUrl={
-                            "https://dekk-crawling-bucket.s3.ap-northeast-2.amazonaws.com/" +
+                            process.env.NEXT_PUBLIC_BUCKET_URL +
+                            "/" +
                             product.productImageUrl
                           }
                           productUrl={product.productUrl}

@@ -332,6 +332,7 @@ const AdminCardList = ({
                         fill
                         sizes="352px"
                         src={imageUrl}
+                        unoptimized
                       />
                     </div>
                   </Link>

@@ -36,7 +36,9 @@ const BackofficeSidebar = ({ className }: BackofficeSidebarProps) => {
   return (
     <aside className={cn(slots.root(), className)}>
       <div className={slots.brandArea()}>
-        {!isCollapsed ? <Image src={Logo} alt="logo" width={110} /> : null}
+        {!isCollapsed ? (
+          <Image src={Logo} alt="logo" width={110} unoptimized />
+        ) : null}
         <button
           aria-label="toggle sidebar"
           className={slots.collapseButton()}
