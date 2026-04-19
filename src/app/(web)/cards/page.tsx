@@ -6,7 +6,12 @@ import config from "@/shared/constatns/config";
 import AdminCardList from "@/widgets/admin-card-list";
 
 interface CardsPageProps {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+interface InitialCardsData {
+  initialPage: PageResponseAdminCard;
+  initialFetchErrorMessage: string | null;
 }
 
 const availableStatuses: AdminCardStatus[] = [
@@ -98,21 +103,32 @@ const createEmptyAdminCardPage = (): PageResponseAdminCard => {
   };
 };
 
+const loadInitialCardsData = async (
+  initialFilters: GetAdminCardsParams,
+): Promise<InitialCardsData> => {
+  try {
+    const initialPage = await getAdminCards(initialFilters);
+
+    return {
+      initialPage,
+      initialFetchErrorMessage: null,
+    };
+  } catch (error) {
+    const apiError = error as { message?: string };
+
+    return {
+      initialPage: createEmptyAdminCardPage(),
+      initialFetchErrorMessage:
+        apiError.message ?? "카드 목록을 불러오지 못했습니다.",
+    };
+  }
+};
+
 const CardsPage = async ({ searchParams }: CardsPageProps) => {
   const resolvedSearchParams = (await searchParams) ?? {};
   const initialFilters = parseFilters(resolvedSearchParams);
-
-  let initialPage = createEmptyAdminCardPage();
-  let initialFetchErrorMessage: string | null = null;
-
-  try {
-    initialPage = await getAdminCards(initialFilters);
-  } catch (error) {
-    const apiError = error as { message?: string };
-    initialFetchErrorMessage =
-      apiError.message ?? "카드 목록을 불러오지 못했습니다.";
-    initialPage = createEmptyAdminCardPage();
-  }
+  const { initialPage, initialFetchErrorMessage } =
+    await loadInitialCardsData(initialFilters);
 
   return (
     <AdminCardList

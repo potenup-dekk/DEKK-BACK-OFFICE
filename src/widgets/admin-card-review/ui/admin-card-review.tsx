@@ -50,7 +50,6 @@ const AdminCardReview = ({
   card,
   categoryTree,
   initialCategoryIds,
-  initialCategorySyncWarning: _initialCategorySyncWarning,
 }: AdminCardReviewProps) => {
   const [selectedCategoryIds, setSelectedCategoryIds] =
     useState<number[]>(initialCategoryIds);
@@ -74,11 +73,10 @@ const AdminCardReview = ({
 
   const imageUrl = useMemo(() => {
     return getCardImageUrl({
-      cardId: card.cardId,
       imageUrl: card.imageUrl,
       cardImageUrl: card.cardImageUrl,
     });
-  }, [card.cardId, card.imageUrl, card.cardImageUrl]);
+  }, [card.imageUrl, card.cardImageUrl]);
 
   useEffect(() => {
     return () => {
@@ -243,11 +241,9 @@ const AdminCardReview = ({
                           fallbackImageUrl={imageUrl}
                           key={product.productId}
                           name={product.name}
-                          productImageUrl={
-                            process.env.NEXT_PUBLIC_BUCKET_URL +
-                            "/" +
-                            product.productImageUrl
-                          }
+                          productImageUrl={getCardImageUrl({
+                            imageUrl: product.productImageUrl,
+                          })}
                           productUrl={product.productUrl}
                         />
                       );

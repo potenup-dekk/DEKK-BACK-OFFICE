@@ -317,7 +317,6 @@ const AdminCardList = ({
           <div className={slots.grid()}>
             {cards.map((card) => {
               const imageUrl = getCardImageUrl({
-                cardId: card.cardId,
                 imageUrl: card.imageUrl,
                 cardImageUrl: card.cardImageUrl,
               });
