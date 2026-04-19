@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+
 import getCategoryTree from "@/shared/api/services/categories/get-category-tree.service";
 import type CategoryTreeNode from "@/shared/api/services/categories/category-tree-node.type";
 import getAdminCardDetail from "@/shared/api/services/cards/get-admin-card-detail.service";
@@ -7,6 +9,12 @@ import AdminCardReview from "@/widgets/admin-card-review";
 
 interface CardReviewPageProps {
   params: Promise<{ cardId: string }>;
+}
+
+interface InitialCardReviewData {
+  card: AdminCardResponse | null;
+  categoryTree: CategoryTreeNode[];
+  errorMessage: string | null;
 }
 
 const toNumberParam = (value: string) => {
@@ -33,36 +41,41 @@ const toInitialCategoryIds = (card: AdminCardResponse) => {
   return [];
 };
 
+const loadInitialCardReviewData = async (
+  cardId: number,
+): Promise<InitialCardReviewData> => {
+  try {
+    const [card, categoryTree] = await Promise.all([
+      getAdminCardDetail(cardId),
+      getCategoryTree(),
+    ]);
+
+    return {
+      card,
+      categoryTree,
+      errorMessage: null,
+    };
+  } catch (error) {
+    const apiError = error as { message?: string };
+
+    return {
+      card: null,
+      categoryTree: [],
+      errorMessage: apiError.message ?? "카드 검수 정보를 불러오지 못했습니다.",
+    };
+  }
+};
+
 const CardReviewPage = async ({ params }: CardReviewPageProps) => {
   const resolvedParams = await params;
   const cardId = toNumberParam(resolvedParams.cardId);
 
   if (cardId === null) {
-    return (
-      <section className="rounded-md border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
-        유효하지 않은 카드 ID입니다.
-      </section>
-    );
+    notFound();
   }
 
-  let card: AdminCardResponse | null = null;
-  let categoryTree: CategoryTreeNode[] = [];
-  let errorMessage: string | null = null;
-
-  try {
-    const [cardDetail, categories] = await Promise.all([
-      getAdminCardDetail(cardId),
-      getCategoryTree(),
-    ]);
-
-    card = cardDetail;
-    categoryTree = categories;
-  } catch (error) {
-    const apiError = error as { message?: string };
-    errorMessage = apiError.message ?? "카드 검수 정보를 불러오지 못했습니다.";
-    card = null;
-    categoryTree = [];
-  }
+  const { card, categoryTree, errorMessage } =
+    await loadInitialCardReviewData(cardId);
 
   if (!card) {
     return (
@@ -73,17 +86,12 @@ const CardReviewPage = async ({ params }: CardReviewPageProps) => {
   }
 
   const initialCategoryIds = toInitialCategoryIds(card);
-  const initialCategorySyncWarning =
-    initialCategoryIds.length === 0
-      ? "현재 카드에 연결된 카테고리 정보가 응답에 없어 빈 상태로 시작합니다."
-      : null;
 
   return (
     <AdminCardReview
       card={card}
       categoryTree={categoryTree}
       initialCategoryIds={initialCategoryIds}
-      initialCategorySyncWarning={initialCategorySyncWarning}
     />
   );
 };

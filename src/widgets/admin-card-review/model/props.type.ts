@@ -5,7 +5,6 @@ interface AdminCardReviewProps {
   card: AdminCardResponse;
   categoryTree: CategoryTreeNode[];
   initialCategoryIds: number[];
-  initialCategorySyncWarning?: string | null;
 }
 
 interface ProductProps {
